@@ -19,7 +19,7 @@ function buildSections(container, categories) {
                 // Determine the class based on whether the thread is the last in the list
                 const textClass = index === category.length - 1 ? 'history-section-text-last' : 'history-section-text';
                 const itemDiv = createDOMElement('div', textClass, thread.previewMessage, historySectionItem);
-                itemDiv.addEventListener('click', () => loadMessages(thread.id));
+                historySectionItem.addEventListener('click', () => listenToMessageThread(thread.id));
             });
         }
     }
@@ -90,44 +90,3 @@ function fetchHistory(userId) {
         console.log('Error getting documents', err);
     });
 }
-
-
-function loadMessages(thread_id) {
-    localStorage.setItem('currentThreadID', thread_id); //Set thread ID when history item is clicked
-    console.log("Current Thread: ", thread_id)
-
-    const messagesRef = database.collection('users').doc(currentUserID).collection('courses').doc(currentCourse.id).collection('messageThreads').doc(thread_id).collection('messages');
-    const messagesContainer = document.getElementById('messages-content-container');
-    messagesContainer.innerHTML = '';  // Clear previous messages before setting up the listener
-    messagesContainer.style.display = 'block'
-    
-    const existingEmptyStateContainer = document.getElementById('empty-state-container');
-    
-    if (existingEmptyStateContainer) {
-        existingEmptyStateContainer.remove(); // Remove the previous empty state container if it exists
-    }
-    
-    // Setting up a real-time listener
-    messagesRef.orderBy('timestamp').onSnapshot(snapshot => {
-        messagesContainer.innerHTML = '';  // Clear messages each time there's a change in the collection
-        snapshot.forEach(doc => {
-            const message = doc.data();
-            displayMessage(message, messagesContainer);
-        });
-    }, err => {
-        console.log('Error fetching messages:', err);
-    });
-}
-
-function displayMessage(message, container) {
-    const messageDiv = createDOMElement('div', message.role === 'user' ? 'user-message-container' : 'assistant-message-container', '', container);
-    if (message.role === 'assistant') {
-        const imgDiv = createDOMElement('div', 'assistant-image-div', '', messageDiv);
-        createDOMElement('img', 'assistant-image', logoURL, imgDiv);
-    }
-    createDOMElement('div', message.role === 'user' ? 'user-message-text' : 'assistant-message-text', message.content, messageDiv);
-
-    // Scroll to the bottom of the container
-    container.scrollTop = container.scrollHeight;
-}
-

@@ -18,7 +18,9 @@ function createDOMElement(type, className, value, parent, onClick) {
     if (onClick) {
         element.addEventListener('click', onClick);
     }
-    parent.appendChild(element);
+    if (parent) {
+        parent.appendChild(element);
+    }
     return element;
 }
 
@@ -44,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function() {
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
             currentUserID = user.uid;
-
+            console.log(currentUserID)
             database.collection('users').doc(currentUserID).get().then(function(doc) {
                 if (doc.exists) {
                     const data = doc.data();
@@ -88,6 +90,7 @@ function updateCourseHeader() {
 function logout() {
     firebase.auth().signOut().then(() => {
         console.log("User signed out");
+        localStorage.removeItem('currentCourse');
         window.location.href = '/login'; 
     }).catch((error) => {
         console.error("Error signing out: ", error);

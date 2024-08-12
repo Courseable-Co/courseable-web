@@ -20,58 +20,24 @@ function createDOMElement(type, className, value, parent) {
 
 
 
-var currentUserID = ""
 var numCourses = 0
 
 document.addEventListener("DOMContentLoaded", function() {
     // Get elements
-    const logoutButton = document.getElementById('logout-button');
-    const profilePhotoContainer = document.getElementById('profile-photo-container')
-    const homeCourseContainer = document.getElementById('home-course-container');
     const deleteCourseModal = $('#delete-course-modal');
     const cancelDeleteCourse = $('#cancel-delete-course');
     const closeDeleteCourseModal = $('#close-delete-course-modal');
 
     // Initial displays
-    profilePhotoContainer.innerHTML = ""
-    homeCourseContainer.innerHTML = "";
     document.getElementById('home-view').style.display = 'block'
     
     // Set onclick listeners
 
-    logoutButton.addEventListener("click", logout);
-
-    // Auth state changed event
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-            currentUserID = user.uid;
-
-            database.collection('users').doc(currentUserID).get().then(function(doc) {
-                if (doc.exists) {
-                    const data = doc.data();
-
-                    if (data.profilePhoto) {
-                        createDOMElement('img', 'header-profile-photo', data.profilePhoto, profilePhotoContainer)
-                    } else {
-                        createDOMElement('div', 'default-profile-photo', '', profilePhotoContainer)
-                    }
-
-                    fetchCourses();
-
-                } else {
-                    console.log("No such document!");
-                    createDOMElement('div', 'default-profile-photo', '', profilePhotoContainer)
-
-                }
-            }).catch(function(error) {
-                console.log("Error getting document:", error);
-                errorText.style.display = "block";
-                errorText.innerHTML = "There was an issue loading your data, please try again later or contact support.";
-            });
-        } else {
-            window.location.href = '/login'; // Redirect to login if not authenticated
+            fetchCourses()
         }
-    });
+    })
 
     // Close modal handlers
     closeDeleteCourseModal.on('click', () => {
@@ -103,7 +69,9 @@ function fetchCourses() {
             const courseDiv = createDOMElement('div', 'course-div', '', homeCourseContainer);
             courseDiv.setAttribute('data-course-id', doc.id);
             courseDiv.addEventListener('click', () => {
-                loadCourseView(course)
+                localStorage.setItem('currentCourse', JSON.stringify(course));
+                updateCourseHeader()
+                window.location.href = `/course?id=${doc.id}`;
             })
 
             if (course.backgroundImage) {
@@ -184,17 +152,5 @@ function deleteCourse(courseId, courseDiv) {
         });
     }).catch(function(error) {
         console.error("Error removing course: ", error);
-    });
-}
-
-function logout() {
-    firebase.auth().signOut().then(() => {
-        console.log("User signed out");
-        window.location.href = '/login'; // Redirect to login page or any other page after logout
-    }).catch((error) => {
-        console.error("Error signing out: ", error);
-        const errorText = document.getElementById('auth-error-text');
-        errorText.style.display = "block";
-        errorText.innerHTML = "There was an issue signing out, please try again later or contact support.";
     });
 }

@@ -78,6 +78,10 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    document.getElementById('close-course-modal').addEventListener('click', () => {
+        newCourseModal.fadeOut()
+    })
+
 
     document.getElementById('go-to-course-button').addEventListener('click', () => {
         newCourseModal.fadeOut()
