@@ -18,7 +18,7 @@ function createDOMElement(type, className, value, parent) {
     return element;
 }
 
-
+var hideBannerButton
 
 var numCourses = 0
 
@@ -27,16 +27,20 @@ document.addEventListener("DOMContentLoaded", function() {
     const deleteCourseModal = $('#delete-course-modal');
     const cancelDeleteCourse = $('#cancel-delete-course');
     const closeDeleteCourseModal = $('#close-delete-course-modal');
+    hideBannerButton = document.getElementById('hide-subscribe-banner')
 
     // Initial displays
     document.getElementById('home-view').style.display = 'block'
     
     // Set onclick listeners
-
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-            fetchCourses()
+            fetchCourses();
         }
+    })
+
+    hideBannerButton.addEventListener('click', () => {
+        $('#subscription-banner').fadeOut();
     })
 
     // Close modal handlers
@@ -79,7 +83,7 @@ function fetchCourses() {
             }
 
             const courseTextContainerTop = createDOMElement('div', 'course-text-container-top', '', courseDiv);
-            createDOMElement('div', 'text-overlay-white', `${new Date(course.startDate).toLocaleDateString()} - ${new Date(course.endDate).toLocaleDateString()}`, courseTextContainerTop);
+            // createDOMElement('div', 'text-overlay-white', `${new Date(course.startDate).toLocaleDateString()} - ${new Date(course.endDate).toLocaleDateString()}`, courseTextContainerTop);
 
             const courseMenuDiv = createDOMElement('div', 'course-menu-div', '', courseTextContainerTop);
             const courseEllipsis = createDOMElement('div', 'course-ellipsis', '', courseMenuDiv);

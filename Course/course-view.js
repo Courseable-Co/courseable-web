@@ -15,6 +15,8 @@ document.addEventListener("DOMContentLoaded", function() {
     //Initial displays
     document.getElementById('all-tutors-container').innerHTML = ''
     document.getElementById('course-people-container').innerHTML = ''
+    document.getElementById('people-section').style.display = ''
+    document.getElementById('tutors-section').style.display = ''
 
     //Course Buttons
     const lectureNotesButton = document.getElementById('lecture-notes-button')
@@ -28,6 +30,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const studyGuidesButton = document.getElementById('study-guides-button')
     studyGuidesButton.addEventListener('click', () => {
         showStudyGuidesInitialView()
+    })
+
+    const quizButton = document.getElementById('quiz-button')
+    quizButton.addEventListener('click', () => {
+        window.location.href = '/quiz'; 
     })
 
     const documentsButton = document.getElementById('documents-button')
@@ -67,7 +74,7 @@ function loadCourseView(course) {
 
     currentCourse = course;
 
-    fetchCoursesAndMatchCourseCode(currentCourse.schoolCode, currentCourse.courseCode)
+    // fetchCoursesAndMatchCourseCode(currentCourse.schoolCode, currentCourse.courseCode)
 
     // Set course details
     courseViewCourseCode.innerHTML = course.courseCode;
@@ -82,11 +89,7 @@ function loadCourseView(course) {
         const listItemDiv = createDOMElement('div', 'list-item-div', '', learningObjectivesList);
         createDOMElement('div', 'icon-unfilled', '', listItemDiv)
         createDOMElement('div', 'list-item-text', objective, listItemDiv);
-
-        createDOMElement('button', 'list-item-button', 'Study', listItemDiv);
-        createDOMElement('button', 'list-item-button', 'Practice', listItemDiv);
     });
-
 }
 
 function hideExamModal() {

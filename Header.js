@@ -29,15 +29,17 @@ function createDOMElement(type, className, value, parent, onClick) {
 let currentCourse = null;
 var currentUserID = ""
 var numCourses = 0
+var isSubscribed 
 
 document.addEventListener("DOMContentLoaded", function() {
+    currentCourse = JSON.parse(localStorage.getItem('currentCourse'));
+
     // Get elements
     const logoutButton = document.getElementById('logout-button');
     const profilePhotoContainer = document.getElementById('profile-photo-container')
 
     // Initial displays
     profilePhotoContainer.innerHTML = ""
-    updateCourseHeader()
 
     // Set onclick listeners
     logoutButton.addEventListener("click", logout);
@@ -49,13 +51,16 @@ document.addEventListener("DOMContentLoaded", function() {
             console.log(currentUserID)
             database.collection('users').doc(currentUserID).get().then(function(doc) {
                 if (doc.exists) {
+                    mixpanel.identify(currentUserID)
                     const data = doc.data();
-
-                    if (data.profilePhoto) {
-                        createDOMElement('img', 'header-profile-photo', data.profilePhoto, profilePhotoContainer)
+                    checkSubscriptionStatus(data.stripeCustomerID)
+                    if (data.profileImage) {
+                        createDOMElement('img', 'header-profile-photo', data.profileImage, profilePhotoContainer)
                     } else {
                         createDOMElement('div', 'default-profile-photo', '', profilePhotoContainer)
                     }
+
+                    updateCourseHeader()
 
                 } else {
                     console.log("No such document!");
@@ -63,7 +68,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }).catch(function(error) {
                 console.log("Error getting user data:", error);
-
             });
         } else {
             window.location.href = '/login';
@@ -75,14 +79,37 @@ document.addEventListener("DOMContentLoaded", function() {
 function updateCourseHeader() {
     const headerCourseCode = document.getElementById('header-course-code')
     const currentCourseButton = document.getElementById('current-course-button')
-    currentCourse = JSON.parse(localStorage.getItem('currentCourse'));
 
     if (currentCourse) {
         headerCourseCode.innerHTML = currentCourse.courseCode
         currentCourseButton.style.display = 'flex'
+        fetchCoursesForDropdown()
     } else {
         currentCourseButton.style.display = 'none'
     }
+}
+
+function fetchCoursesForDropdown() {
+    const courseDropdownList = document.getElementById('course-dropdown-list');
+    courseDropdownList.innerHTML = '';
+
+    database.collection('users').doc(currentUserID).collection('courses').get().then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            const course = doc.data();
+            const courseDropdownItem = createDOMElement('div', 'course-dropdown-item', course.courseCode, courseDropdownList);
+            if (currentCourse.id == course.id) {
+                courseDropdownItem.className = 'course-dropdown-item-current'
+            }
+            courseDropdownItem.addEventListener('click', () => {
+                localStorage.setItem('currentCourse', JSON.stringify(course));
+                updateCourseHeader()
+                window.location.reload();
+            })
+        });
+
+    }).catch(function(error) {
+        console.log("Error getting courses:", error);
+    });
 }
 
 
@@ -108,17 +135,49 @@ document.addEventListener('DOMContentLoaded', () => {
         'course-chat': 'chat-tab',
         'lecture-notes': 'notebook-tab'
     };
-
-    // Extract the last non-empty segment of the URL path
     const activeSegment = window.location.pathname.split('/').filter(Boolean).pop();
-
-    // Determine the active tab ID, default to 'dashboard-tab' if no matching segment
     const activeTabId = tabs[activeSegment] || 'dashboard-tab';
-
-    // Switch tabs
     Object.values(tabs).forEach(tabId => {
         const tabElement = document.getElementById(tabId);
-        tabElement.classList.toggle('tab-selected', tabId === activeTabId);
-        tabElement.classList.toggle('tab-unselected', tabId !== activeTabId);
+        tabElement.classList.toggle('dashboard-tab-selected', tabId === activeTabId);
+        tabElement.classList.toggle('dashboard-tab', tabId !== activeTabId);
     });
 });
+
+function checkSubscriptionStatus(customerID) {
+    const banner = document.getElementById('subscription-banner');
+
+    if (!customerID) {
+        if (banner) {
+            $(banner).fadeIn();
+        }
+        return;
+    }
+
+    fetch('https://courseable-d6c39cc199c5.herokuapp.com/check-subscription-status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ customer_id: customerID })
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        if (data.subscribed) {
+            isSubscribed = true;
+            if (banner) {
+                banner.style.display = 'none';
+            }
+        } else {
+            isSubscribed = false;
+            if (banner) {
+                $(banner).fadeIn();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking subscription status:', error);
+    });
+}
+

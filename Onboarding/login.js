@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-            redirectToDashboard(user);
+            checkOrCreateUser(user)
         }
     });
 
@@ -30,7 +30,7 @@ function emailLogin() {
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             console.log("Email login successful", userCredential.user);
-            redirectToDashboard(userCredential.user);
+            checkOrCreateUser(userCredential.user)
         })
         .catch((error) => {
             errorText.textContent = error.message;
@@ -44,7 +44,7 @@ function googleLogin() {
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
             console.log("Google login successful", result.user);
-            redirectToDashboard(result.user);
+            checkOrCreateUser(result.user)
         })
         .catch((error) => {
             document.getElementById('auth-error-text').textContent = error.message;
@@ -58,7 +58,7 @@ function appleLogin() {
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
             console.log("Apple login successful", result.user);
-            redirectToDashboard(result.user);
+            checkOrCreateUser(result.user)
         })
         .catch((error) => {
             document.getElementById('auth-error-text').textContent = error.message;
@@ -67,10 +67,6 @@ function appleLogin() {
         });
 }
 
-function redirectToDashboard(user) {
-    console.log("Redirecting to dashboard with user:", user.uid);
-    window.location.href = '/dashboard';
-}
 
 
                                   
@@ -105,5 +101,39 @@ function sendPasswordReset() {
             forgotErrorText.innerHTML = "There was an issue sending your email. Please try again";
 
         }
+    });
+}
+
+function checkOrCreateUser(user) {
+    var userDB = firebase.firestore();
+    mixpanel.identify(user.id)
+
+    userDB.collection('users').doc(user.uid).get().then(function(doc) {
+        if (!doc.exists) {
+            console.log(doc)
+            var currentDate = new Date();
+            userDB.collection('users').doc(user.uid).set({
+                id: user.uid,
+                email: user.email,
+                name: "",
+                isSubscribed: false,
+                dateJoined : firebase.firestore.Timestamp.fromDate(currentDate)
+            }).then(() => {
+                console.log("New user created with UID:", user.uid);
+                mixpanel.identify(user.uid)
+                mixpanel.people.set({ 
+                    'userID' : user.uid,
+                    '$name': 'Jane Doe',
+                    '$email': user.email});
+                window.location.href = '/subscribe';
+            }).catch(error => {
+                console.error("Error creating user:", error);
+            });
+        } else {
+            console.log("User already exists in Firestore:", user.uid);
+            window.location.href = '/dashboard';
+        }
+    }).catch(error => {
+        console.error("Error checking user existence:", error);
     });
 }

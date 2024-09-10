@@ -85,7 +85,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.getElementById('go-to-course-button').addEventListener('click', () => {
         newCourseModal.fadeOut()
-        loadCourseView(currentCourse)
+        localStorage.setItem('currentCourse', JSON.stringify(currentCourse));
+        updateCourseHeader()
+        window.location.href = `/course?id=${currentCourse.id}`;
     })
 
     document.getElementById('add-another-course-button').addEventListener('click', () => {
@@ -170,7 +172,6 @@ function uploadSyllabusText(syllabusText) {
     .then(data => {
         console.log('Success:', data);
         fetchCourses()
-        // Extract and clean up the JSON response
         const jsonResponse = data.response;
         const currentDate = new Date().toLocaleDateString();
 
@@ -179,7 +180,7 @@ function uploadSyllabusText(syllabusText) {
         document.getElementById('course-loaded-startEnd').innerHTML = 
         `${jsonResponse.startDate ? new Date(jsonResponse.startDate).toLocaleDateString() : currentDate} - ${jsonResponse.endDate ? new Date(jsonResponse.endDate).toLocaleDateString() : currentDate}`;
 
-        currentCourse = jsonResponse //Set global course for navigation
+        currentCourse = jsonResponse
         $('#loading-syllabus-div').fadeOut(function() {
             $('#course-loaded-container').fadeIn();
         });

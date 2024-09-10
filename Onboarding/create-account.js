@@ -56,6 +56,7 @@ function googleSignUp() {
             console.error("Error with Google sign-in:", error);
         });
 }
+
 function appleSignUp() {
     const provider = new firebase.auth.OAuthProvider('apple.com');
     firebase.auth().signInWithPopup(provider)
@@ -75,14 +76,21 @@ function checkOrCreateUser(user) {
 
     userDB.collection('users').doc(user.uid).get().then(function(doc) {
         if (!doc.exists) {
+            var currentDate = new Date();
             userDB.collection('users').doc(user.uid).set({
                 id: user.uid,
                 email: user.email,
                 name: "",
-                isSubscribed: false
+                isSubscribed: false,
+                dateJoined : firebase.firestore.Timestamp.fromDate(currentDate)
             }).then(() => {
                 console.log("New user created with UID:", user.uid);
-                window.location.href = '/dashboard';
+                mixpanel.identify(user.uid)
+                mixpanel.people.set({ 
+                    'userID' : user.uid,
+                    '$name': 'Jane Doe',
+                    '$email': user.email});
+                window.location.href = '/subscribe';
             }).catch(error => {
                 console.error("Error creating user:", error);
             });
